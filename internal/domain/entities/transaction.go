@@ -1,10 +1,31 @@
 package entities
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
-type Transaction struct {
-	Amount      int       `json:"valor"`
-	Description string    `json:"descricao"`
-	Type        string    `json:"tipo"`
-	Date        time.Time `json:"realizada_em"`
+const (
+	D TransactionType = "d"
+	C TransactionType = "c"
+)
+
+type (
+	TransactionType string
+	Transaction     struct {
+		Amount      int             `json:"valor" cql:"amount"`
+		Description string          `json:"descricao" cql:"description"`
+		Type        TransactionType `json:"tipo" cql:"type"`
+		Date        time.Time       `json:"realizada_em" cql:"date"`
+	}
+)
+
+func (t TransactionType) Validate() error {
+	switch t {
+	case D:
+	case C:
+	default:
+		return fmt.Errorf("invalid transaction type")
+	}
+	return nil
 }

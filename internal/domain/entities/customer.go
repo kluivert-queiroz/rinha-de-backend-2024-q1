@@ -6,13 +6,14 @@ import (
 )
 
 type Customer struct {
-	Id           int `bson:"_id"`
-	Balance      int
-	Limit        int
-	Transactions []Transaction
+	Id           string        `bson:"_id" cql:"id"`
+	Balance      int           `cql:"balance"`
+	Limit        int           `cql:"limit"`
+	Transactions []Transaction `cql:"transactions"`
+	Version      int           `cql:"version"`
 }
 
-func NewCustomer(id int, balance int, limit int, transactions []Transaction) *Customer {
+func NewCustomer(id string, balance int, limit int, transactions []Transaction) *Customer {
 	c := Customer{
 		Id:           id,
 		Balance:      balance,
@@ -23,22 +24,24 @@ func NewCustomer(id int, balance int, limit int, transactions []Transaction) *Cu
 }
 func (c *Customer) Deposit(amount int, description string) {
 	c.Balance += amount
-	c.Transactions = append(c.Transactions, Transaction{
+	t := Transaction{
 		Amount:      amount,
 		Description: description,
-		Type:        "C",
+		Type:        C,
 		Date:        time.Now(),
-	})
+	}
+	c.Transactions = append([]Transaction{t}, c.Transactions...)
 }
 
 func (c *Customer) Withdraw(amount int, description string) {
 	c.Balance -= amount
-	c.Transactions = append(c.Transactions, Transaction{
+	t := Transaction{
 		Amount:      amount,
 		Description: description,
-		Type:        "D",
+		Type:        D,
 		Date:        time.Now(),
-	})
+	}
+	c.Transactions = append([]Transaction{t}, c.Transactions...)
 	if len(c.Transactions) > 10 {
 		c.Transactions = c.Transactions[0:10]
 	}
@@ -53,5 +56,5 @@ func (c *Customer) Validate() error {
 	}
 	return nil
 }
-func (c *Customer) ID() int                           { return c.Id }
+func (c *Customer) ID() string                        { return c.Id }
 func (c *Customer) LatestTransactions() []Transaction { return c.Transactions }

@@ -1,16 +1,59 @@
 version: '3.8'
 services:
-  api:
-    build: .
+  haproxy:
+    image: haproxy
     restart: always
     ports:
-      - 3000:3000
+      - 9999:9999
+    volumes:
+      - ./haproxy:/usr/local/etc/haproxy
     depends_on:
-      - mongo
+      - api1
+      - api2
+    networks:
+      - web
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
+  api1: &api1
+    container_name: app1
+    build: .
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - web
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "150MB"
+  api2:
+    <<: *api1
+    container_name: app2
   mongo:
     image: mongo
     restart: always
     environment:
       - MONGO_INITDB_DATABASE=wallet
     volumes:
-      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./docker/db/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - web
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.7"
+          memory: "200MB"
+networks:
+  web:
+    driver: bridge

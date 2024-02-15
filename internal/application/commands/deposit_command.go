@@ -2,6 +2,6 @@ package commands
 
 type DepositCommand struct {
 	Amount      int
-	CustomerId  int
+	CustomerId  string
 	Description string
 }
